@@ -4,37 +4,29 @@ import com.devconnect.bakend.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 
+@Getter
+@Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Setter
-@Getter
 @Entity
-@Table(name="posts")
-public class Post {
+@Table(name = "post_likes",uniqueConstraints =@UniqueConstraint( columnNames = {"post_id","user_id"}))
+public class PostLike {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long postLikesId;
+
+    @ManyToOne
+    @JoinColumn(name = "post_id")
+    private Post post;
 
     @ManyToOne
     @JoinColumn(name="user_id")
     private User user;
 
-    @Column(length = 50,nullable = false)
-    private String title;
-
-    @Column(length =500 )
-    private String description;
-
-    private String imagePublicId;
-    private String imageUrl;
     @CreationTimestamp
     private LocalDateTime createdAt;
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
 
 }

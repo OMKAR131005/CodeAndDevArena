@@ -1,4 +1,4 @@
-package com.devconnect.bakend.follow;
+package com.devconnect.bakend.post;
 
 import com.devconnect.bakend.user.User;
 import jakarta.persistence.*;
@@ -8,32 +8,28 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
+@AllArgsConstructor
 @Entity
-@Table(name="follows", uniqueConstraints = {
-@UniqueConstraint(
-        columnNames = {"follower_id", "following_id"}
-)
-})
-public class Follow {
+@Table(name="comments")
+public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long followId;
+    private  Long commentId;
 
     @ManyToOne
-    @JoinColumn(name="follower_id")
-    private User follower;
+    @JoinColumn(name="post_id")
+    private  Post post ;
 
     @ManyToOne
-    @JoinColumn(name="following_id")
-    private User following;
+    @JoinColumn(name="user_id")
+    private User user;
 
-    @Enumerated(EnumType.STRING)
-    private FollowStatus status;
+    @Column(length = 500,nullable = false)
+    private String commentText;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
