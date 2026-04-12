@@ -12,4 +12,6 @@ public class AuthResponse {
     private String message;
     private String profilePicture;
     private Long userId;
+    private String secret;
+    private String optUrl;
 }
