@@ -23,6 +23,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private String cookieName;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        System.out.println("REQUEST URI: " + request.getRequestURI());
         Cookie[] cookies = request.getCookies();
         String token=null;
         if(cookies!=null){
