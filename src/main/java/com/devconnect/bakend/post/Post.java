@@ -37,4 +37,6 @@ public class Post {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Enumerated(EnumType.STRING)
+    private PostVisibility visibility;
 }
