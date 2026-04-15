@@ -14,6 +14,7 @@ public class PublicProfileResponse implements ProfileResponse{
     private DevProfileDTO devProfiles;
     private SocialLinksDTO socialLinks;
     private ProfileStatsDTO stats;
+    private String backgroundBanner;
     //private List<UserSummaryDTO> followers;
     //private List<UserSummaryDTO> following;
     //private Page<Post> posts;
