@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 @Setter
-@Entity
 @Builder
+@Entity
 @Table(name="views" ,uniqueConstraints ={@UniqueConstraint(columnNames = {"profile_id","viewer_id"})})
 public class ProfileView {
     @Id

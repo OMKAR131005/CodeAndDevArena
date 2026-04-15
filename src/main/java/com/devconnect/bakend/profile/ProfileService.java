@@ -13,6 +13,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -218,14 +219,19 @@ public class ProfileService {
 
     }
 
-    public Page<UserSummaryDTO> getFollower(int size){
-        Pageable pageable=Pageable.ofSize(size);
-        Long userId = (Long) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        User user = userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundException("User not found"));
-        Page<Follow> follower = followRepository.findByFollowerAndStatus(user, FollowStatus.FOLLOWING, pageable);
-        follower.stream().map((fllwer)->toUserSummery(fllwer)).toList();
-
+    public Page<UserSummaryDTO> getFollower(int size,int page,String username){
+      Pageable pageable= PageRequest.of(page,size);
+        User user = userRepository.findByUsername(username);
+        if(user == null) throw new ResourceNotFoundException("User not found");
+        return followRepository.findFollowers(user,FollowStatus.FOLLOWING,pageable);
     }
+    public Page<UserSummaryDTO> getFollowing(int size,int page,String username){
+        Pageable pageable=PageRequest.of(page,size);
+        User user = userRepository.findByUsername(username);
+        if(user == null) throw new ResourceNotFoundException("User not found");
+        return followRepository.findFollowing(user,FollowStatus.FOLLOWING,pageable);
+    }
+
     private MyProfileResponse buildMyProfileResponse(User user, Profile profile) {
         return MyProfileResponse.builder()
                 .username(user.getUsername())

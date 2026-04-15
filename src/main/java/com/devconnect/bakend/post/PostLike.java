@@ -29,4 +29,7 @@ public class PostLike {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(columnDefinition = "bigint default 0")
+    private Long viewCount;
+
 }
