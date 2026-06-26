@@ -2,8 +2,11 @@ package com.devconnect.bakend.post;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.devconnect.bakend.event.CommentEvent;
+import com.devconnect.bakend.event.LikeEvent;
 import com.devconnect.bakend.exceptions.NotValidUser;
 import com.devconnect.bakend.exceptions.ResourceNotFoundException;
+import com.devconnect.bakend.notification.NotificationProducer;
 import com.devconnect.bakend.notification.NotificationService;
 import com.devconnect.bakend.notification.NotificationType;
 import com.devconnect.bakend.post.dto.CommentRequest;
@@ -35,6 +38,7 @@ public class PostService {
     private final CommentRepository commentRepository;
     private final NotificationService notificationService;
     private final Cloudinary cloudinary;
+    private final NotificationProducer notificationProducer;
     public PostResponse createPost(PostRequest request){
         Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user=userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundException("user not found"));
@@ -106,10 +110,14 @@ public class PostService {
         }
         else{
             postLikeRepository.save(PostLike.builder().post(post).user(user).build());
-            notificationService.createNotification(
-                    post.getUser(), user, NotificationType.LIKE, post,
-                    user.getUsername() + " liked your post"
-            );
+           // notificationService.createNotification(
+              //      post.getUser(), user, NotificationType.LIKE, post,
+               //     user.getUsername() + " liked your post"
+           // );
+            if (!post.getUser().getUserId().equals(userId1)) {
+                LikeEvent event = new LikeEvent(userId1, user.getUsername(), id, post.getUser().getUserId());
+                notificationProducer.sendLikeEvent(event);
+            }
             return true;
         }
 
@@ -120,10 +128,14 @@ public class PostService {
         User user=userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("user not found"));
         Comment comment=Comment.builder().post(post).user(user).commentText(request.getCommentText()).build();
         commentRepository.save(comment);
-        notificationService.createNotification(
-                post.getUser(), user, NotificationType.COMMENT, post,
-                user.getUsername() + " commented on your post"
-        );
+        //notificationService.createNotification(
+          //      post.getUser(), user, NotificationType.COMMENT, post,
+            //    user.getUsername() + " commented on your post"
+        //);
+        if (!post.getUser().getUserId().equals(userId)) {
+            CommentEvent event = new CommentEvent(userId, user.getUsername(), postId, post.getUser().getUserId(), request.getCommentText());
+            notificationProducer.sendCommentEvent(event);
+        }
         Profile profile = profileRepository.findByUser(user);
         return CommentResponse.builder().commentId(comment.getCommentId())
                 .username(user.getUsername())
