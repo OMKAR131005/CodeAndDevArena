@@ -10,6 +10,7 @@ import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import java.util.Map;
+import java.security.Principal;
 
 @Component
 @RequiredArgsConstructor
@@ -17,23 +18,34 @@ public class HttpHandshakeInterceptor implements HandshakeInterceptor {
     private final JwtUtil jwtUtil;
     private final CookieUtil cookieUtil;
 
+
+
+    @Override
+    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
+                               WebSocketHandler wsHandler, Exception exception) {
+    }
+
+
+
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
                                    WebSocketHandler wsHandler, Map<String, Object> attributes) {
+
         if (request instanceof ServletServerHttpRequest servletRequest) {
             HttpServletRequest httpRequest = servletRequest.getServletRequest();
             String token = cookieUtil.getCookieValue(httpRequest);
             if (token != null && jwtUtil.validateToken(token)) {
                 Long userId = jwtUtil.getId(token);
                 attributes.put("userId", userId);
+                attributes.put("principal", new Principal() {
+                    @Override
+                    public String getName() {
+                        return userId.toString();
+                    }
+                });
                 return true;
             }
         }
         return false;
-    }
-
-    @Override
-    public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
-                               WebSocketHandler wsHandler, Exception exception) {
     }
 }

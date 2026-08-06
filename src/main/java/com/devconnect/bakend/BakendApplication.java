@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableScheduling
 @SpringBootApplication
-public class BakendApplication {
+public class  BakendApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(BakendApplication.class, args);

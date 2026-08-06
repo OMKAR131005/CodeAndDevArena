@@ -1,6 +1,7 @@
 package com.devconnect.bakend.config;
 
 import com.devconnect.bakend.exceptions.InvalidCredentialsException;
+import com.devconnect.bakend.exceptions.NotValidUser;
 import com.devconnect.bakend.exceptions.ResourceNotFoundException;
 import com.devconnect.bakend.exceptions.UserAlreadyExistsException;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,11 @@ public class GlobalExceptionHandling {
     }
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<Map<String, String>> handleInvalidCredentialsException(InvalidCredentialsException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", e.getMessage()));
+    }
+    @ExceptionHandler(NotValidUser.class)
+    public ResponseEntity<Map<String, String>> handleNotValidUser(NotValidUser e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("message", e.getMessage()));
     }

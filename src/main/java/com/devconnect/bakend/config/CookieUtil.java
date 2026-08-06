@@ -18,6 +18,7 @@ public class CookieUtil {
 
     @Value("${app.cookie.secure}")
     private boolean secure;
+
     public void addHttpOnlyCookies(HttpServletResponse httpServletResponse,String token){
         ResponseCookie responseCookie= ResponseCookie.
                 from(cookieName,token)
@@ -42,5 +43,14 @@ public class CookieUtil {
             }
         }
         return null;
+    }
+    public void addTemporaryCookies(HttpServletResponse httpServletResponse, String token) {
+        ResponseCookie responseCookie = ResponseCookie
+                .from(cookieName, token)
+                .httpOnly(true).path("/").secure(secure)
+                .maxAge(300) // 5 minutes
+                .sameSite("Lax")
+                .build();
+        httpServletResponse.addHeader(HttpHeaders.SET_COOKIE, responseCookie.toString());
     }
 }

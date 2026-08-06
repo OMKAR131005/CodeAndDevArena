@@ -5,8 +5,13 @@ import com.devconnect.bakend.sharedata.UserSummaryDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
 
 
 @RequiredArgsConstructor
@@ -66,5 +71,20 @@ private final ProfileService profileService;
     @GetMapping("/{username}/following")
     public ResponseEntity<Page<UserSummaryDTO>> getFollowing(@PathVariable String username, @RequestParam int page, @RequestParam int size) {
         return ResponseEntity.ok(profileService.getFollowing(size,page,username));
+    }
+    @PostMapping("/me/image")
+    public ResponseEntity<String> uploadProfileImage(@RequestParam("file") MultipartFile file) throws IOException, IOException {
+        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String imageUrl = profileService.uploadProfileImage(userId, file);
+        return ResponseEntity.ok(imageUrl);
+    }
+
+    @GetMapping("/profiles")
+    public ResponseEntity<Page<MyProfileResponse>> getAllProfiles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "") String filter) {
+        return ResponseEntity.ok(profileService.getAllProfiles(page, size, search, filter));
     }
 }

@@ -1,5 +1,7 @@
 package com.devconnect.bakend.profile;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.devconnect.bakend.exceptions.ResourceNotFoundException;
 import com.devconnect.bakend.follow.Follow;
 import com.devconnect.bakend.follow.FollowRepository;
@@ -11,14 +13,16 @@ import com.devconnect.bakend.user.User;
 import com.devconnect.bakend.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -30,6 +34,7 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
     private  final PostRepository postRepository;
+    private final Cloudinary cloudinary;
     private final ProfileViewRepository profileViewRepository;
     public ProfileResponse getProfile(String profileUsername){
         Long requestingId = (Long) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
@@ -285,6 +290,50 @@ public class ProfileService {
         User user=follower.getFollowing();
         Profile profile = profileRepository.findByUser(user);
         return UserSummaryDTO.builder().username(user.getUsername()).profilePicture(profile.getProfilePicture()).fullName(profile.getFullName()).build();
+    }
+
+    @Transactional
+    public String uploadProfileImage(Long userId, MultipartFile file) throws IOException {
+        Profile profile = (Profile) profileRepository.findByUser_UserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile not found"));
+
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+        String imageUrl = (String) uploadResult.get("secure_url");
+
+        profile.setProfilePicture(imageUrl);
+        profileRepository.save(profile);
+
+        return imageUrl;
+    }
+    public Page<MyProfileResponse> getAllProfiles(int page, int size, String search, String filter) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Profile> profiles = profileRepository.findBySearchAndFilter(search, filter, pageable);
+        return profiles.map(profile -> MyProfileResponse.builder()
+                .username(profile.getUser().getUsername())
+                .fullName(profile.getFullName())
+                .profilePicture(profile.getProfilePicture())
+                .headLine(profile.getHeadLine())
+                .role(profile.getRole())
+                .domain(profile.getDomain())
+                .tags(profile.getTags())
+                .codingProfiles(CodingProfilesDTO.builder()
+                        .leetcodeHandle(profile.getLeetcodeHandle())
+                        .codeforcesHandle(profile.getCodeforcesHandle())
+                        .gfgHandle(profile.getGfgHandle())
+                        .hackerRank(profile.getHackerRank())
+                        .atcoderHandle(profile.getAtcoderHandle())
+                        .codechefHandle(profile.getCodechefHandle()).build())
+                .devProfiles(DevProfileDTO.builder()
+                        .githubHandle(profile.getGithubHandle())
+                        .gitlabHandle(profile.getGitlabHandle())
+                        .portfolioUrl(profile.getPortfolioUrl()).build())
+                .stats(ProfileStatsDTO.builder()
+                        .followerCount(followRepository.countByFollowingAndStatus(profile.getUser(), FollowStatus.FOLLOWING))
+                        .followingCount(followRepository.countByFollowerAndStatus(profile.getUser(), FollowStatus.FOLLOWING))
+                        .postCount(postRepository.countByUser(profile.getUser()))
+                        .build())
+                .build()
+        );
     }
 }
 

@@ -1,4 +1,4 @@
-package com.devconnect.notificationservice;
+package main.java.com.devconnect.notificationservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

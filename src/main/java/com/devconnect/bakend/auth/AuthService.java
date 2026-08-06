@@ -13,6 +13,7 @@ import com.devconnect.bakend.profile.Profile;
 import com.devconnect.bakend.profile.ProfileRepository;
 import com.devconnect.bakend.user.User;
 import com.devconnect.bakend.user.UserRepository;
+import com.devconnect.bakend.user.dto.Role;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
@@ -41,6 +42,9 @@ public class AuthService {
     private String cookieName;
 
     public AuthResponse registration(RegisterRequest request){
+        System.out.printf("Register request: %s\n", request);
+        System.out.printf("Register request: %s\n", request);
+        System.out.println("i love you spring boot");
         String url=null;
          GoogleAuthenticator gAuth;
          GoogleAuthenticatorKey key;
@@ -51,8 +55,9 @@ public class AuthService {
             user=User.builder()
                     .password(passwordEncoder.encode(request.getPassword()))
                     .email(request.getEmail())
-                    .isMfaActive(request.isMfaActive()).username(request.getUsername()).build();
+                    .isMfaActive(request.isMfaActive()).username(request.getUsername()).role(Role.USER).build();
             if(user.isMfaActive()){
+                System.out.println("enter mfa active");
                  gAuth = new GoogleAuthenticator();
                  key = gAuth.createCredentials();
                 String secret = key.getKey();
@@ -68,21 +73,42 @@ public class AuthService {
             if(user2!=null)throw new RuntimeException(request.getUsername());
         }
 
+        System.out.println(user.getEmail());
+        System.out.println(user.getUsername());
+        System.out.println(user.getPassword());
+        System.out.println(user.getTwoFactorSecretKey());
+        System.out.println(url);
+
         return AuthResponse.builder()
                 .username(user.getUsername())
-                .userId(user.getUserId()).
-                secret(user.getTwoFactorSecretKey()).optUrl(url).message("registration successful").build();
+                .userId(user.getUserId())
+                .secret(user.getTwoFactorSecretKey())
+                .optUrl(url)
+                .mfaActive(user.isMfaActive()) // yeh add karo!
+                .message("registration successful")
+                .build();
     }
-    public AuthResponse login(LoginRequest request, HttpServletResponse httpServletResponse){
-        Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+    public AuthResponse login(LoginRequest request, HttpServletResponse httpServletResponse) {
+        Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
         User user = userRepository.findByEmail(request.getEmail());
         String token = util.generateToken(user.getUserId(), user.isMfaActive());
-        cookieUtil.addHttpOnlyCookies(httpServletResponse,token);
-        Profile profile = profileRepository.findByUser(user);
-        return AuthResponse.builder().username(user.getUsername())
-                .userId(user.getUserId()).message("login successful").profilePicture(profile.getProfilePicture())
-                .build();
 
+        if (user.isMfaActive()) {
+            cookieUtil.addTemporaryCookies(httpServletResponse, token); // 5 min temporary
+        } else {
+            cookieUtil.addHttpOnlyCookies(httpServletResponse, token); // 7 days full
+        }
+
+        Profile profile = profileRepository.findByUser(user);
+        return AuthResponse.builder()
+                .username(user.getUsername())
+                .userId(user.getUserId())
+                .message("login successful")
+                .profilePicture(profile.getProfilePicture())
+                .mfaActive(user.isMfaActive()) // frontend ko pata chale 2FA hai
+                .build();
     }
     public AuthResponse verify2FA(HttpServletRequest request,String code,HttpServletResponse httpServletResponse){
         Cookie[] cookies = request.getCookies();
@@ -100,8 +126,8 @@ public class AuthService {
         Long userId = util.getId(token);
         Optional<User> user=userRepository.findById(userId);
         user.orElseThrow(()->new RuntimeException("user with userId:"+userId+"Not found"));
-
         boolean match=new GoogleAuthenticator().authorize(user.get().getTwoFactorSecretKey(),Integer.parseInt(code));
+
         if(!match){
             throw new InvalidCredentialsException("2FA fails");
         }

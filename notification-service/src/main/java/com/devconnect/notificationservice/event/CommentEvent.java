@@ -1,4 +1,4 @@
-package com.devconnect.notificationservice.event;
+package main.java.com.devconnect.notificationservice.event;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -7,6 +7,7 @@ import com.devconnect.bakend.user.User;
 import com.devconnect.bakend.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
@@ -19,8 +20,10 @@ public class MessageService {
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
-    public void sendMessage(MessageRequest request) {
-        Long senderId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    private final SimpUserRegistry simpUserRegistry;
+
+    public void sendMessage(MessageRequest request,Long senderId) {
+        //Long senderId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new ResourceNotFoundException("user not found"));
         User receiver = userRepository.findByUsername(request.getReceiverUsername());
@@ -44,11 +47,18 @@ public class MessageService {
                 .createdAt(message.getCreatedAt())
                 .build();
 
-        messagingTemplate.convertAndSendToUser(
-                receiver.getUserId().toString(),
-                "/queue/messages",
+        System.out.println("Sending to user: " + receiver.getUserId().toString());
+        messagingTemplate.convertAndSend(
+                "/topic/messages/" + receiver.getUserId(),
                 response
         );
+        System.out.println("Message sent to broker");
+
+        // After convertAndSendToUser
+        System.out.println("Active users in broker: ");
+        simpUserRegistry.findSubscriptions(s -> true).forEach(s ->
+                System.out.println("  Session: " + s.getSession().getId() +
+                        " Principal: " + s.getSession().getUser()));
     }
 
     public Page<MessageResponse> getChatHistory(String receiverUsername, Pageable pageable) {

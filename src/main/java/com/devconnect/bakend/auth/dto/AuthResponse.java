@@ -14,4 +14,5 @@ public class AuthResponse {
     private Long userId;
     private String secret;
     private String optUrl;
+    private boolean mfaActive;
 }

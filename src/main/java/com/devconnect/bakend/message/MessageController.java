@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
@@ -16,10 +17,10 @@ public class MessageController {
     private final MessageService messageService;
 
     @MessageMapping("/chat")
-    public void sendMessage(MessageRequest request) {
-        messageService.sendMessage(request);
+    public void sendMessage(MessageRequest request, SimpMessageHeaderAccessor headerAccessor) {
+        Long userId = (Long) headerAccessor.getSessionAttributes().get("userId");
+        messageService.sendMessage(request, userId);
     }
-
     @GetMapping("/api/messages/{username}")
     public ResponseEntity<Page<MessageResponse>> getChatHistory(
             @PathVariable String username,

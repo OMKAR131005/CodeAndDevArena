@@ -11,7 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.io.IOException;
 import java.util.List;
 
@@ -39,7 +39,9 @@ public class JwtFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
                 if(!jwtUtil.isPending2FA(token)){
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(jwtUtil.getId(token), null, List.of());
+                    String role = jwtUtil.getRole(token);
+                    List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(jwtUtil.getId(token), null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
 

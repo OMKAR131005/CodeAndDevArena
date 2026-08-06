@@ -1,11 +1,13 @@
 package com.devconnect.bakend.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
 
+@ToString
 @Getter
 @Setter
 @Builder
@@ -20,6 +22,7 @@ public class RegisterRequest {
     @NotEmpty
     @Size(min=5)
     private String password;
-    private boolean isMfaActive;
+    @JsonProperty("isMfaActive")
+    private boolean mfaActive;
     private String fullName;
 }
